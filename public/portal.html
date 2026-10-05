@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MILANGA & CO. - Portal Corporativo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+    <meta name="theme-color" content="#a3d9c9">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Milanga">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            red: '#f05442',
+                            redHover: '#d94332',
+                            mint: '#a3d9c9',
+                            mintLight: '#e4f4f0',
+                            bg: '#f2efe9'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body class="bg-brand-bg dark:bg-gray-900 text-gray-800 dark:text-gray-100 min-h-screen font-sans pb-24 transition-colors duration-200">
+
+    <!-- CONTENEDOR DE ALERTAS TOAST -->
+    <div id="toastContainer" class="fixed top-20 right-4 z-[9999] space-y-2 pointer-events-none"></div>
+
+    <!-- NAVBAR Y CABECERA CON MODO BLACK -->
+    <header class="bg-brand-mint dark:bg-gray-800 p-3 shadow-sm sticky top-0 z-50 transition-colors duration-200">
+        <div class="max-w-xl mx-auto flex justify-between items-center gap-2">
+            <div class="bg-white dark:bg-gray-700 px-4 py-2 rounded-xl shadow-sm text-center flex-1 border border-gray-100 dark:border-gray-600 transition-colors flex items-center justify-center gap-2">
+                <h1 class="font-black text-xl tracking-tight text-brand-red leading-none">MILANGA & CO.</h1>
+            </div>
+            <button onclick="toggleDarkMode()" id="btnDarkMode" title="Cambiar Modo" class="bg-white dark:bg-gray-700 hover:bg-gray-100 text-gray-700 dark:text-amber-400 p-2.5 rounded-xl shadow-sm border border-gray-100 dark:border-gray-600 flex items-center justify-center transition">
+                <i id="iconDarkMode" class="fa-solid fa-moon text-base"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- BANNER AVISO IMPORTANTE EN VIVO -->
+    <div id="bannerAvisoGlobal" class="max-w-xl mx-auto mt-3 px-4 hidden">
+        <div class="bg-brand-red text-white p-4 rounded-2xl shadow-lg border-2 border-white/20 space-y-1.5 animate-pulse">
+            <div class="flex items-center gap-2 font-black text-sm uppercase tracking-wider">
+                <i class="fa-solid fa-bullhorn text-base"></i> <span id="txtAvisoTitulo">Aviso Importante</span>
+            </div>
+            <p id="txtAvisoTexto" class="text-xs leading-relaxed font-medium"></p>
+        </div>
+    </div>
+
+    <main class="max-w-xl mx-auto px-4 py-6 space-y-6">
+
+        <!-- 1. AUTENTICACIÓN -->
+        <section id="secAuth" class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 space-y-5 transition-colors">
+            <div class="text-center space-y-2">
+                <div class="w-16 h-16 bg-brand-mint text-brand-red rounded-2xl flex items-center justify-center mx-auto text-2xl font-black shadow-inner border border-brand-mint/50">
+                    M&C
+                </div>
+                <h2 class="text-xl font-bold text-gray-900 dark:text-white">Portal Corporativo</h2>
+                <p class="text-xs text-gray-500 dark:text-gray-400">Ingresá con tu usuario y contraseña</p>
+            </div>
+
+            <div class="flex border-b dark:border-gray-700 text-xs font-bold">
+                <button onclick="mostrarTab('login')" id="tabBtnLogin" class="w-1/2 py-2 border-b-2 border-brand-red text-brand-red font-bold">Ingresar</button>
+                <button onclick="mostrarTab('register')" id="tabBtnRegister" class="w-1/2 py-2 text-gray-400 font-bold">Registrarse</button>
+            </div>
+
+            <div id="authError" class="p-3 bg-red-50 dark:bg-red-900/30 text-brand-red dark:text-red-400 text-xs rounded-xl font-bold hidden"></div>
+
+            <form id="formLogin" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Usuario / Email:</label>
+                    <input type="text" id="loginUser" required placeholder="ej: admin@milanga.com" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs outline-none focus:border-brand-red dark:text-white transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Contraseña:</label>
+                    <input type="password" id="loginPass" required placeholder="******" class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs outline-none focus:border-brand-red dark:text-white transition">
+                </div>
+                <button type="submit" class="w-full bg-brand-red hover:bg-brand-redHover text-white py-3 rounded-xl font-bold text-sm shadow-sm transition">Iniciar Sesión</button>
+            </form>
+
+            <form id="formRegister" class="space-y-3 hidden">
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Seleccioná tu Nombre en la Nómina:</label>
+                    <select id="regSelectNomina" required class="w-full p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs dark:text-white">
+                        <option value="">Cargando lista de nómina...</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Crea tu Usuario:</label>
+                    <input type="text" id="regUser" required placeholder="ej: usuario" class="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Crea tu Contraseña:</label>
+                    <input type="password" id="regPass" required placeholder="Mínimo 6 caracteres" class="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs dark:text-white">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Foto Perfil (Opcional):</label>
+                    <input type="file" id="regFotoFile" accept="image/*" class="w-full text-xs text-gray-500 dark:text-gray-400">
+                </div>
+                <button type="submit" class="w-full bg-brand-red hover:bg-brand-redHover text-white py-3 rounded-xl font-bold text-xs shadow-sm transition">Completar Registro y Enlazar</button>
+            </form>
+        </section>
+
+        <!-- BARRA DE VISTA PREVIA DE PORTAL -->
+        <div id="barraVistaPreviaPortal" class="hidden sticky top-2 z-50 bg-gray-900 text-white p-3 rounded-2xl shadow-lg flex items-center justify-between gap-3">
+            <div class="text-xs"><span class="font-black">👁 Vista previa</span><span id="textoVistaPreviaPortal" class="ml-2 text-gray-200"></span></div>
+            <button onclick="salirVistaPreviaPortal()" class="bg-brand-red text-white px-3 py-2 rounded-xl text-[10px] font-bold">Volver al portal de la dueña</button>
+        </div>
+
+        <!-- 2. PANEL PRIMER ADMINISTRADOR (DUEÑA) -->
+        <section id="secAdminPrincipal" class="space-y-5 hidden">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-red-100 text-brand-red flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-crown"></i></div>
+                    <div>
+                        <span class="text-[10px] bg-brand-red text-white px-2 py-0.5 rounded-full font-bold">Primer Administrador (Dueño)</span>
+                        <h2 id="adminPrincipalNombreSesion" class="font-bold text-sm text-gray-900 dark:text-white mt-0.5">Luciana</h2>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="mostrarPanelPortales()" class="bg-brand-red text-white text-xs font-bold px-3 py-2 rounded-xl"><i class="fa-solid fa-eye mr-1"></i> Portales</button>
+                    <button onclick="cerrarSesion()" class="bg-gray-100 dark:bg-gray-700 text-xs font-bold px-3 py-2 rounded-xl"><i class="fa-solid fa-arrow-right-from-bracket"></i> Salir</button>
+                </div>
+            </div>
+            <div class="flex gap-2 overflow-x-auto pb-1">
+                <button type="button" onclick="mostrarPanelDuena('principal')" class="shrink-0 px-4 py-2 rounded-xl bg-gray-900 text-white text-[10px] font-bold">Inicio</button>
+                <button type="button" onclick="mostrarPanelPortales()" class="shrink-0 px-4 py-2 rounded-xl bg-brand-red text-white text-[10px] font-bold"><i class="fa-solid fa-eye mr-1"></i> Portales</button>
+                <button type="button" onclick="mostrarPanelDuena('tareas')" class="shrink-0 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-[10px] font-bold">Delegar tareas</button>
+                <button type="button" onclick="mostrarPanelDuena('horarios')" class="shrink-0 px-4 py-2 rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-[10px] font-bold">Horarios</button>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <button type="button" onclick="mostrarPanelDuena('tareas')" class="bg-brand-red text-white py-3 rounded-xl text-xs font-bold">📋 Delegar tareas</button>
+                <button type="button" onclick="mostrarPanelDuena('horarios')" class="bg-gray-900 text-white py-3 rounded-xl text-xs font-bold">🕐 Gestionar horarios</button>
+            </div>
+
+            <!-- VISTA DE PORTALES POR USUARIO -->
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border space-y-3">
+                <div class="flex items-center justify-between gap-2">
+                    <div>
+                        <h3 class="font-bold text-xs text-brand-red"><i class="fa-solid fa-eye"></i> Ver portales</h3>
+                        <p class="text-[10px] text-gray-500">La dueña puede previsualizar cómo ve el sistema cada usuario sin cerrar su sesión.</p>
+                    </div>
+                    <button type="button" onclick="mostrarPanelPortales()" class="bg-gray-900 text-white px-3 py-2 rounded-xl text-[10px] font-bold">Abrir</button>
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border space-y-3">
+                <h3 class="font-bold text-xs border-b pb-2 text-brand-red"><i class="fa-solid fa-user-plus"></i> Alta de Nuevos Administradores y Encargados</h3>
+                <form id="formAltaRol" class="space-y-2">
+                    <input type="text" id="inputNombreRol" required placeholder="Nombre y Apellido" class="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border rounded-xl text-xs dark:text-white">
+                    <select id="selectRolNuevo" class="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border rounded-xl text-xs dark:text-white">
+                        <option value="segundo_admin">Segundo Administrador</option>
+                        <option value="encargado">Encargado Operativo</option>
+                    </select>
+                    <button type="submit" class="w-full bg-brand-red text-white font-bold py-2.5 rounded-xl text-xs">Crear Usuario en el Sistema</button>
+                </form>
+                <div class="overflow-x-auto pt-2"><table class="w-full text-xs text-left"><tbody id="listaRolesAdminPrincipal"></tbody></table></div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border space-y-3">
+                <h3 class="font-bold text-xs border-b pb-2 text-brand-red"><i class="fa-solid fa-eye"></i> Supervisión Global Absoluta</h3>
+                <div id="supervisionGlobalContenido" class="text-xs space-y-2 text-gray-600 dark:text-gray-300">
+                    <div class="flex flex-col sm:flex-row gap-2"></div>
+                    <div id="detalleJornadas" class="mt-3">Cargando registros operativos en tiempo real...</div>
+                </div>
+            </div>
+
+            <!-- MONITOR DE ESTADO DEL SISTEMA Y CPU -->
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border space-y-3">
+                <div class="flex justify-between items-center border-b pb-2">
+                    <h3 class="font-bold text-xs text-brand-red flex items-center gap-1.5">
+                        <i class="fa-solid fa-server"></i> Estado del Sistema y CPU (Vercel / Firebase)
+                    </h3>
+                    <button onclick="actualizarEstadoSistema()" class="text-[10px] bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded font-bold">Actualizar</button>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border">
+                        <span class="text-[10px] text-gray-500 block">Uso de CPU</span>
+                        <span id="metricCpu" class="text-sm font-black text-emerald-600">12%</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border">
+                        <span class="text-[10px] text-gray-500 block">Memoria RAM</span>
+                        <span id="metricRam" class="text-sm font-black text-blue-600">184 MB</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border">
+                        <span class="text-[10px] text-gray-500 block">Latencia Firebase</span>
+                        <span id="metricLatency" class="text-sm font-black text-emerald-600">45 ms</span>
+                    </div>
+                    <div class="p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border">
+                        <span class="text-[10px] text-gray-500 block">Estado API / Sammy</span>
+                        <span class="text-sm font-black text-emerald-600">Óptimo</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTROL DE BANCA Y ARQUEO DIARIO -->
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border space-y-3">
+                <h3 class="font-bold text-xs border-b pb-2 text-emerald-600 flex items-center gap-1.5">
+                    <i class="fa-solid fa-wallet"></i> Control de Banca y Arqueo Diario
+                </h3>
+                <div class="grid sm:grid-cols-3 gap-2">
+                    <input type="number" id="inputMontoBanca" placeholder="Monto ($)" class="p-2.5 bg-gray-50 dark:bg-gray-700 border rounded-xl text-xs dark:text-white">
+                    <select id="selectTipoMovimiento" class="p-2.5 bg-gray-50 dark:bg-gray-700 border rounded-xl text-xs dark:text-white">
+                        <option value="ingreso">Ingreso de Caja</option>
+                        <option value="retiro">Retiro / Egreso</option>
+                    </select>
+                    <button onclick="registrarMovimientoBanca()" class="bg-emerald-600 text-white font-bold py-2.5 rounded-xl text-xs">Registrar Movimiento</button>
+                </div>
+                <div class="overflow-x-auto pt-2">
+                    <table class="w-full text-xs text-left">
+                        <thead>
+                            <tr class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                                <th class="p-2">Fecha / Hora</th>
+                                <th class="p-2">Tipo</th>
+                                <th class="p-2 text-right">Monto</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaBancaAdmin">
+                            <tr><td colspan="3" class="p-2 text-gray-400 text-center">Sin movimientos registrados hoy.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- VISTA DE PORTALES - SOLO DUEÑA -->
+        <section id="secVistaPortales" class="hidden space-y-4">
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-4">
+                <div class="flex items-center justify-between gap-3">
+                    <div><h2 class="font-black text-base">👁 Ver portales</h2><p class="text-xs text-gray-500">Elegí un rol y después una persona para abrir su portal exactamente con sus horarios y datos.</p></div>
+                    <button onclick="mostrarPanelDuena('principal')" class="text-xs font-bold text-brand-red">Volver</button>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="portalRolEmpleado" onclick="seleccionarRolVistaPortal('empleado')" class="py-3 rounded-xl text-xs font-bold bg-brand-red text-white">👤 Empleados</button>
+                    <button id="portalRolEncargado" onclick="seleccionarRolVistaPortal('encargado')" class="py-3 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">👔 Encargados</button>
+                    <button id="portalRolAdmin" onclick="seleccionarRolVistaPortal('admin')" class="py-3 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-200">🧑‍💼 Administrativos</button>
+                </div>
+                <div id="listaPersonasVistaPortal" class="grid sm:grid-cols-2 gap-2"></div>
+            </div>
+        </section>
+
+        <!-- DELEGACIÓN DE TAREAS - DUEÑA -->
+        <section id="secDelegacionTareas" class="hidden space-y-4">
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
+                <div class="flex items-center justify-between gap-3 mb-4">
+                    <div><h2 class="font-black text-base">📋 Delegar tareas</h2><p class="text-xs text-gray-500">Cinco bloques independientes para crear cualquier tarea y enviarla a un encargado o administrador.</p></div>
+                    <button onclick="mostrarPanelDuena('principal')" class="text-xs font-bold text-brand-red">Volver</button>
+                </div>
+                <div id="bloquesDelegacion" class="grid gap-4"></div>
+            </div>
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
+                <div class="flex items-center justify-between mb-3"><h3 class="font-bold text-sm">Seguimiento</h3><button onclick="renderTareasDelegadas()" class="text-xs font-bold text-brand-red">Actualizar</button></div>
+                <div id="listaTareasDelegadas" class="space-y-2"></div>
+            </div>
+        </section>
+
+        <!-- GESTIÓN DE HORARIOS - DUEÑA -->
+        <section id="secGestionHorariosDuena" class="hidden space-y-4">
+            <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border">
+                <div class="flex items-center justify-between mb-4"><div><h2 class="font-black text-base">🕐 Crear y modificar horarios</h2><p class="text-xs text-gray-500">Editá cualquier día y semana. Los cambios se reflejan en el portal de la persona.</p></div><button onclick="mostrarPanelDuena('principal')" class="text-xs font-bold text-brand-red">Volver</button></div>
+                <div class="grid sm:grid-cols-3 gap-3">
+                    <select id="duenaHorarioEmpleado" class="p-3 rounded-xl border bg-gray-50 dark:bg-gray-700 dark:text-white text-xs"></select>
+                    <select id="duenaHorarioSemana" class="p-3 rounded-xl border bg-gray-50 dark:bg-gray-700 dark:text-white text-xs">
+                        <option value="sem1">Semana 1</option><option value="sem2">Semana 2</option><option value="sem3">Semana 3</option><option value="sem4">Semana 4</option>
+                    </select>
+                    <button onclick="cargarHorarioDuena()" class="bg-gray-900 text-white rounded-xl font-bold text-xs">Cargar horario</button>
+                </div>
+                <div id="gridHorariosDuena" class="grid sm:grid-cols-2 gap-3 mt-4"></div>
+                <div class="flex gap-2 mt-4">
+                    <button onclick="nuevoHorarioDuena()" class="flex-1 bg-gray-100 dark:bg-gray-700 rounded-xl py-3 text-xs font-bold">Crear horario nuevo</button>
+                    <button onclick="guardarHorarioDuena()" class="flex-1 bg-emerald-600 text-white rounded-xl py-3 text-xs font-bold">Guardar cambios</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. SEGUNDO ADMINISTRADOR / ENCARGADO -->
+        <section id="secAdminSecundario" class="space-y-5 hidden">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-red-100 text-brand-red flex items-center justify-center font-bold text-lg"><i class="fa-solid fa-user-shield"></i></div>
+                    <div>
+                        <span id="adminSecRolBadge" class="text-[10px] bg-brand-red text-white px-2 py-0.5 rounded-full font-bold">Administración / Encargado</span>
+                        <h2 id="adminSecNombreSesion" class="font-bold text-sm text-gray-900 dark:text-white mt-0.5">Admin</h2>
+                    </div>
+                </div>
+                <button onclick="cerrarSesion()" class="bg-gray-100 dark:bg-gray-700 text-xs font-bold px-3 py-2 rounded-xl"><i class="fa-solid fa-arrow-right-from-bracket"></i> Salir</button>
+                <button onclick="finalizarJornada()" class="bg-amber-100 text-amber-800 text-xs font-bold px-3 py-2 rounded-xl">Finalizar jornada</button>
+            </div>
+
+            <!-- CONTROL DE INICIO DE JORNADA -->
+            <div id="adminJornadaGate" class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border border-amber-300 space-y-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center"><i class="fa-solid fa-clock"></i></div>
+                    <div><h3 class="font-bold text-sm">Inicio de jornada</h3><p class="text-[11px] text-gray-500 dark:text-gray-300">Iniciá tu jornada para acceder al panel de administración.</p></div>
+                </div>
+                <button id="btnIniciarJornada" onclick="iniciarJornada()" class="w-full bg-brand-red hover:bg-brand-redHover text-white font-bold py-3 rounded-xl text-sm">Iniciar jornada</button>
+                <p id="estadoJornadaAdmin" class="text-[11px] text-gray-500"></p>
+            </div>
+            <div id="adminSecContenido" class="hidden space-y-5">
+                <!-- TAREAS ASIGNADAS AL ENCARGADO / ADMINISTRADOR -->
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border space-y-3 border-emerald-500/30">
+                    <div class="flex items-center justify-between border-b pb-2">
+                        <h3 class="font-bold text-xs text-brand-red flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-sm"></i> Mis Tareas Asignadas
+                        </h3>
+                        <button onclick="renderMisTareas()" class="text-[10px] bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 text-gray-700 dark:text-gray-300 px-2.5 py-1 rounded-lg font-bold">
+                            Actualizar
+                        </button>
+                    </div>
+                    <div id="listaMisTareasAdminSec" class="space-y-2"></div>
+                </div>
+
+                <!-- CREAR HORARIOS AUTOMÁTICAMENTE DESDE PDF/FOTO -->
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border space-y-3 border-brand-red/30 bg-brand-red/5">
+                    <h3 class="font-bold text-xs border-b pb-2 text-brand-red flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Crear Horarios Automáticamente (PDF / Imagen)
+                    </h3>
+                    <p class="text-[11px] text-gray-600 dark:text-gray-300">
+                        Adjuntá la foto o el PDF con la grilla de turnos. El sistema identifica el nombre y lo vincula con la nómina.
+                    </p>
+                    <div>
+                        <label class="block text-[11px] font-bold text-gray-600 dark:text-gray-400 mb-1">Cargar en:</label>
+                        <select id="semanaHorariosAuto" class="w-full p-2.5 bg-white dark:bg-gray-700 border rounded-xl text-xs dark:text-white">
+                            <option value="sem1">Semana 1</option>
+                            <option value="sem2">Semana 2</option>
+                            <option value="sem3">Semana 3</option>
+                            <option value="sem4">Semana 4</option>
+                        </select>
+                    </div>
+                    <input type="file" id="inputArchivoHorariosAuto" accept="image/*,application/pdf" class="w-full text-xs text-gray-500 dark:text-gray-400 p-2 bg-white dark:bg-gray-700 border rounded-xl">
+                    <div class="border-t pt-3 mt-2 space-y-2">
+                        <button onclick="cargarGrillaBaseActual()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition">
+                            Cargar esta grilla exacta (sin subir archivo)
+                        </button>
+                    </div>
+                    <div id="resultadoHorariosAuto" class="hidden text-[11px] rounded-xl p-3 bg-gray-50 dark:bg-gray-700/60"></div>
+                    <button onclick="procesarHorariosAutomaticos()" class="w-full bg-brand-red hover:bg-brand-redHover text-white font-bold py-2.5 rounded-xl text-xs shadow-sm transition">
+                        Procesar y Distribuir Automáticamente en el Portal
+                    </button>
+                </div>
+
+                <!-- CARGAR CARTEL DE AVISO IMPORTANTE EN VIVO -->
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border space-y-3">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h3 class="font-bold text-xs text-brand-red"><i class="fa-solid fa-bullhorn"></i> Publicar Cartel de Aviso Importante</h3>
+                        <button onclick="borrarAvisoGlobal()" class="text-[10px] bg-red-100 text-brand-red px-2 py-1 rounded font-bold">Quitar Aviso</button>
+                    </div>
+                    <input type="text" id="inputTituloAvisoGlobal" placeholder="Título del aviso..." class="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border rounded-xl text-xs dark:text-white">
+                    <textarea id="inputTextoAvisoGlobal" rows="2" placeholder="Escribir el mensaje importante..." class="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border rounded-xl text-xs dark:text-white"></textarea>
+                    <button onclick="guardarAvisoGlobal()" class="bg-brand-red text-white font-bold px-4 py-2.5 rounded-xl text-xs w-full shadow-sm">Publicar Aviso en Vivo</button>
+                </div>
+
+                <!-- GESTIÓN Y NÓMINA DE EMPLEADOS -->
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border space-y-3">
+                    <h3 class="font-bold text-xs border-b pb-2 text-emerald-600"><i class="fa-solid fa-users"></i> Nómina del Personal</h3>
+                    <form id="formAltaEmpleadoAdminSec" class="flex gap-2">
+                        <input type="text" id="adminSecAltaNombre" required placeholder="Nombre del nuevo empleado..." class="flex-1 p-2.5 bg-gray-50 dark:bg-gray-700 border rounded-xl text-xs dark:text-white">
+                        <button type="submit" class="bg-emerald-600 text-white font-bold px-4 py-2.5 rounded-xl text-xs">Agregar</button>
+                    </form>
+                    <div class="overflow-x-auto pt-2">
+                        <table class="w-full text-xs text-left">
+                            <thead>
+                                <tr class="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
+                                    <th class="p-2">Nombre</th>
+                                    <th class="p-2">Estado</th>
+                                    <th class="p-2 text-right">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaNominaAdminSec"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ASIGNAR HORARIOS -->
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border space-y-3">
+                    <h3 class="font-bold text-xs border-b pb-2"><i class="fa-solid fa-calendar-days text-brand-red"></i> Asignación de Horarios Semanales</h3>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Empleado:</label>
+                        <select id="selectEmpHorarioSec" onchange="seleccionarEmpleadoHorariosSec(this.value)" class="w-full p-2.5 bg-gray-50 dark:bg-gray-700 border rounded-xl text-xs dark:text-white"></select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-600 dark:text-gray-400 mb-1">Semana:</label>
+                        <div class="grid grid-cols-4 gap-1.5">
+                            <button id="btnAdminSecSem1" onclick="cambiarSemanaAdminSec('sem1')" class="py-2 rounded-xl text-xs font-bold bg-brand-red text-white">Sem 1</button>
+                            <button id="btnAdminSecSem2" onclick="cambiarSemanaAdminSec('sem2')" class="py-2 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-600">Sem 2</button>
+                            <button id="btnAdminSecSem3" onclick="cambiarSemanaAdminSec('sem3')" class="py-2 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-600">Sem 3</button>
+                            <button id="btnAdminSecSem4" onclick="cambiarSemanaAdminSec('sem4')" class="py-2 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-600">Sem 4</button>
+                        </div>
+                    </div>
+                    <div id="gridHorariosAdminSec" class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2"></div>
+                    <button id="btnGuardarHorariosSec" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-3 rounded-xl text-xs w-full shadow-sm transition">Guardar Horarios</button>
+                </div>
+
+                <!-- SOLICITUDES DE FRANCOS -->
+                <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border space-y-3">
+                    <div class="flex justify-between items-center border-b pb-2">
+                        <h3 class="font-bold text-xs"><i class="fa-solid fa-paper-plane text-brand-red"></i> Solicitudes de Francos</h3>
+                        <input id="buscadorSolicitudes" oninput="filtrarSolicitudesAdmin()" placeholder="Buscar..." class="p-1.5 bg-gray-50 dark:bg-gray-700 border rounded-lg text-xs dark:text-white w-36">
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-xs text-left">
+                            <tbody id="listaSolicitudesAdminSec"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. PANEL EMPLEADO / ENCARGADO -->
+        <section id="secEmpleado" class="space-y-5 hidden">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border">
+                <div class="flex items-center justify-between border-b pb-2 mb-3"><div><h3 class="font-bold text-sm">📋 Mis tareas</h3></div><button onclick="renderMisTareas()" class="text-xs font-bold text-brand-red">Actualizar</button></div>
+                <div id="listaMisTareas" class="space-y-2"></div>
+            </div>
+
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-2xl shadow-sm border flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-lg overflow-hidden">
+                        <img id="empFotoImg" class="w-full h-full object-cover hidden">
+                        <span id="empFotoDefault"><i class="fa-solid fa-user"></i></span>
+                    </div>
+                    <div>
+                        <span id="txtRolPerfilEmp" class="text-[10px] text-brand-red font-bold block">Portal del Empleado</span>
+                        <h2 id="empNombreSesion" class="font-bold text-sm text-gray-900 dark:text-white">Empleado</h2>
+                    </div>
+                </div>
+                <button onclick="cerrarSesion()" class="bg-gray-100 dark:bg-gray-700 text-xs font-bold px-3 py-2 rounded-xl"><i class="fa-solid fa-arrow-right-from-bracket"></i> Salir</button>
+            </div>
+
+            <!-- PESTAÑAS CHICAS SUPERIORES -->
+            <div class="flex overflow-x-auto gap-1 bg-white dark:bg-gray-800 p-1.5 rounded-2xl border shadow-sm">
+                <button onclick="cambiarPestanaEmpleado('mural')" id="tabEmpMural" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold bg-brand-red text-white whitespace-nowrap"><i class="fa-solid fa-comments mr-1"></i> Mural</button>
+                <button onclick="cambiarPestanaEmpleado('horarios')" id="tabEmpHorarios" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap"><i class="fa-solid fa-calendar-days mr-1"></i> Horarios</button>
+                <button onclick="cambiarPestanaEmpleado('cambioHorarios')" id="tabEmpCambioHorarios" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap"><i class="fa-solid fa-clock-rotate-left mr-1"></i> Cambio Horarios</button>
+                <button onclick="cambiarPestanaEmpleado('capacitacion')" id="tabEmpCapacitacion" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap"><i class="fa-solid fa-graduation-cap mr-1"></i> Capacitación</button>
+                <button onclick="cambiarPestanaEmpleado('reforzar')" id="tabEmpReforzar" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Reforzar</button>
+                <button onclick="cambiarPestanaEmpleado('vestimenta')" id="tabEmpVestimenta" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap"><i class="fa-solid fa-shirt mr-1"></i> Flyers</button>
+                <button onclick="cambiarPestanaEmpleado('lanzamientos')" id="tabEmpLanzamientos" class="flex-1 py-2 px-3 rounded-xl text-xs font-bold text-gray-600 dark:text-gray-300 whitespace-nowrap"><i class="fa-solid fa-rocket mr-1"></i> Lanzamientos</button>
+            </div>
+
+            <!-- PESTAÑA: MURAL -->
+            <div id="vistaEmpMural" class="space-y-4">
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-4">
+                    <h3 class="font-bold text-sm text-gray-900 dark:text-white border-b pb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-camera-retro text-brand-red"></i> Mural del Día / Logros y Metas
+                    </h3>
+                    <form id="formMuralEmp" class="space-y-3">
+                        <textarea id="muralEmpTexto" rows="2" placeholder="Compartí un logro..." class="w-full p-3 bg-gray-50 dark:bg-gray-700 border rounded-xl text-xs dark:text-white"></textarea>
+                        <input type="file" id="muralEmpFoto" accept="image/*" class="w-full text-xs text-gray-500">
+                        <button type="submit" class="w-full bg-brand-red text-white font-bold py-2.5 rounded-xl text-xs">Publicar al Mural</button>
+                    </form>
+                    <div id="feedMuralEmp" class="space-y-4 pt-2"></div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA: HORARIOS -->
+            <div id="vistaEmpHorarios" class="space-y-4 hidden">
+                <div id="contenedorGrillaEmpleado" class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-4">
+                    <div class="flex items-center justify-between">
+                        <h3 class="font-bold text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-days text-brand-red"></i> Mi Grilla Semanal de Horarios
+                        </h3>
+                        <button onclick="descargarCapturaHorario()" class="text-xs bg-gray-100 dark:bg-gray-700 px-2.5 py-1.5 rounded-xl font-bold"><i class="fa-solid fa-download"></i> Captura</button>
+                    </div>
+
+                    <div class="flex gap-1.5">
+                        <button id="btnEmpSem1" onclick="cambiarSemanaEmpleado('sem1')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-brand-red text-white shadow-sm">Sem 1</button>
+                        <button id="btnEmpSem2" onclick="cambiarSemanaEmpleado('sem2')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-700">Sem 2</button>
+                        <button id="btnEmpSem3" onclick="cambiarSemanaEmpleado('sem3')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-700">Sem 3</button>
+                        <button id="btnEmpSem4" onclick="cambiarSemanaEmpleado('sem4')" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-700">Sem 4</button>
+                    </div>
+
+                    <div class="overflow-x-auto rounded-xl border">
+                        <table class="w-full text-center text-xs">
+                            <thead>
+                                <tr class="bg-brand-mint text-gray-800 font-bold">
+                                    <th class="p-2.5 border-r">Lunes</th>
+                                    <th class="p-2.5 border-r">Martes</th>
+                                    <th class="p-2.5 border-r">Miércoles</th>
+                                    <th class="p-2.5 border-r">Jueves</th>
+                                    <th class="p-2.5 border-r">Viernes</th>
+                                    <th class="p-2.5 border-r">Sábado</th>
+                                    <th class="p-2.5">Domingo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaHorariosExcel"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-4">
+                    <h3 class="font-bold text-sm text-gray-900 dark:text-white"><i class="fa-solid fa-paper-plane text-brand-red"></i> Solicitar Franco / Día Libre</h3>
+                    <form id="formSolicitudFranco" class="space-y-3">
+                        <input type="date" id="fechaSolicitud" required class="w-full p-3 bg-gray-50 dark:bg-gray-700 border rounded-xl text-xs dark:text-white">
+                        <textarea id="motivoSolicitud" required placeholder="Motivo..." class="w-full p-3 bg-gray-50 dark:bg-gray-700 border rounded-xl text-xs dark:text-white"></textarea>
+                        <button type="submit" class="w-full bg-brand-red text-white font-bold py-3 rounded-xl text-xs">Enviar Solicitud</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- PESTAÑA: CAMBIO DE HORARIOS -->
+            <div id="vistaEmpCambioHorarios" class="space-y-4 hidden">
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-3">
+                    <h3 class="font-bold text-sm text-gray-900 dark:text-white"><i class="fa-solid fa-clock-rotate-left text-brand-red"></i> Cambio de Horarios</h3>
+                    <p id="empTxtCambioHorarios" class="text-xs text-gray-600 dark:text-gray-400">Sin información.</p>
+                    <div id="contenedorArchivosCambioHorarios" class="grid grid-cols-2 gap-2 pt-2"></div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA: CAPACITACIÓN -->
+            <div id="vistaEmpCapacitacion" class="space-y-4 hidden">
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-3">
+                    <h3 class="font-bold text-sm text-gray-900 dark:text-white"><i class="fa-solid fa-graduation-cap text-brand-red"></i> Capacitación & Drive</h3>
+                    <div id="contenedorDriveCapacitacion" class="hidden pt-1">
+                        <a id="linkDriveCapacitacion" href="#" target="_blank" class="flex items-center justify-center gap-2 bg-blue-600 text-white font-bold p-3 rounded-xl text-xs shadow-sm">
+                            <i class="fa-brands fa-google-drive text-base"></i> Abrir Carpeta de Google Drive
+                        </a>
+                    </div>
+                    <p id="empTxtCapacitacion" class="text-xs text-gray-600 dark:text-gray-400">Sin información.</p>
+                    <div id="contenedorArchivosCapacitacion" class="space-y-2"></div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA: REFORZAR PROCEDIMIENTOS -->
+            <div id="vistaEmpReforzar" class="space-y-4 hidden">
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-3">
+                    <h3 class="font-bold text-sm text-gray-900 dark:text-white"><i class="fa-solid fa-triangle-exclamation text-brand-red"></i> Procedimientos a Reforzar</h3>
+                    <p id="empTxtReforzar" class="text-xs text-gray-600 dark:text-gray-400">Sin información.</p>
+                    <div id="contenedorArchivosReforzar" class="grid grid-cols-2 gap-2 pt-2"></div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA: FLYERS / VESTIMENTA -->
+            <div id="vistaEmpVestimenta" class="space-y-4 hidden">
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-3">
+                    <h3 class="font-bold text-sm text-gray-900 dark:text-white"><i class="fa-solid fa-shirt text-brand-red"></i> Flyers y Vestimenta</h3>
+                    <p id="empTxtVestimenta" class="text-xs text-gray-600 dark:text-gray-400">Sin información.</p>
+                    <div id="contenedorArchivosVestimenta" class="grid grid-cols-2 gap-2 pt-2"></div>
+                </div>
+            </div>
+
+            <!-- PESTAÑA: LANZAMIENTOS -->
+            <div id="vistaEmpLanzamientos" class="space-y-4 hidden">
+                <div class="bg-white dark:bg-gray-800 p-5 rounded-2xl shadow-sm border space-y-3">
+                    <h3 class="font-bold text-sm text-gray-900 dark:text-white"><i class="fa-solid fa-rocket text-brand-red"></i> Nuevos Lanzamientos</h3>
+                    <p id="empTxtLanzamientos" class="text-xs text-gray-600 dark:text-gray-400">Sin información.</p>
+                    <div id="contenedorArchivosLanzamientos" class="grid grid-cols-2 gap-2 pt-2"></div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- ASISTENTE OPERATIVO SAMMY FLOTANTE CON VOZ Y MULTIMODAL -->
+    <div id="widgetSammy" class="fixed bottom-4 right-4 z-[999] flex flex-col items-end">
+        <div id="sammyVentana" class="w-80 sm:w-[430px] bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 mb-3 hidden flex flex-col h-[560px] overflow-hidden transition-all">
+            <div class="bg-brand-red text-white p-3 flex justify-between items-center shadow-md">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-full bg-white text-brand-red flex items-center justify-center font-black text-xs shadow">S</div>
+                    <div>
+                        <h4 class="font-bold text-xs flex items-center gap-1.5">Sammy 🤖 <span class="text-[9px] bg-white/20 px-1.5 py-0.5 rounded-full font-normal">Multimodal + Voz</span></h4>
+                        <span class="text-[10px] text-white/80">Asistente operativo de Milanga & Co.</span>
+                    </div>
+                </div>
+                <button onclick="toggleSammyChat()" class="text-white hover:text-gray-200 p-1"><i class="fa-solid fa-xmark text-sm"></i></button>
+            </div>
+            
+            <div id="sammyChatMensajes" class="flex-1 p-3 overflow-y-auto space-y-3 text-xs bg-gray-50 dark:bg-gray-900/50">
+                <div class="bg-white dark:bg-gray-800 p-3 rounded-2xl border shadow-sm max-w-[92%]">
+                    <p class="font-bold text-brand-red">¡Hola! Soy Sammy 👋</p>
+                    <p class="mt-1">Estoy conectada al portal en tiempo real. Podés pedirme consultar horarios, subir facturas de compras, revisar la nómina o dictarme por voz.</p>
+                </div>
+            </div>
+
+            <!-- Indicador de archivo adjunto -->
+            <div id="sammyAdjuntoNombre" class="hidden px-3 py-1.5 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 text-[10px] font-bold border-t flex items-center justify-between">
+                <span id="sammyAdjuntoTexto">📎 Archivo adjunto</span>
+                <button onclick="removerAdjuntoSammy()" class="text-red-500 hover:text-red-700 ml-2"><i class="fa-solid fa-circle-xmark"></i></button>
+            </div>
+
+            <!-- Barra de entrada con micrófono y adjuntos -->
+            <div class="p-2.5 bg-white dark:bg-gray-800 border-t dark:border-gray-700 flex gap-2 items-center">
+                <button onclick="document.getElementById('sammyFileInput').click()" title="Adjuntar foto o factura" class="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 p-2.5 rounded-xl text-xs text-gray-700 dark:text-gray-200 transition">
+                    <i class="fa-solid fa-paperclip"></i>
+                </button>
+                <input type="file" id="sammyFileInput" accept="image/*,application/pdf" class="hidden" onchange="seleccionarArchivoSammy(this)">
+                
+                <button onclick="activarMicrofonoSammy()" id="btnMicSammy" title="Hablarle a Sammy" class="bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 p-2.5 rounded-xl text-xs text-gray-700 dark:text-gray-200 transition">
+                    <i id="iconMicSammy" class="fa-solid fa-microphone"></i>
+                </button>
+
+                <input type="text" id="sammyInput" onkeypress="if(event.key==='Enter')enviarMensajeSammy()" placeholder="Pedile algo a Sammy..." class="flex-1 p-2.5 bg-gray-100 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-xs dark:text-white outline-none focus:border-brand-red transition">
+                
+                <button onclick="enviarMensajeSammy()" class="bg-brand-red hover:bg-brand-redHover text-white px-3.5 py-2.5 rounded-xl text-xs font-bold transition shadow-sm">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+
+        <button onclick="toggleSammyChat()" class="bg-brand-red hover:bg-brand-redHover text-white p-3.5 rounded-full shadow-xl flex items-center justify-center gap-2 transition transform hover:scale-105">
+            <i class="fa-solid fa-robot text-lg"></i>
+            <span class="text-xs font-bold pr-1 hidden sm:inline">Chatear con Sammy</span>
+        </button>
+    </div>
+
+    <!-- MODAL VISOR DE FOTOS CON ZOOM -->
+    <div id="modalVisorImg" onclick="cerrarVisorImagen()" class="fixed inset-0 bg-black/95 z-[999] hidden flex items-center justify-center p-4 cursor-zoom-out">
+        <img id="imgVisorCompleta" src="" class="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl">
+    </div>
+
+    <!-- LÓGICA COMPLETA DEL PORTAL Y SAMMY -->
+    <script type="module" src="/portal.js"></script>
+</body>
+</html>

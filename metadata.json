@@ -1,0 +1,6 @@
+{
+  "name": "Sammy AI Studio — Milanga & Co.",
+  "description": "Banco de pruebas interactivo, optimización con Gemini y código de producción para Sammy, la IA operativa de Milanga & Co.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
